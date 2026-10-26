@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArrowIP</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Comic Sans MS";
+        }
+
+        body {
+            background: linear-gradient(65deg, #de1468 0%, #4f2f3c 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px 15px;
+            position: relative;
+            color: #ffffff;
+        }
+
+        .ip_version {
+            position: absolute;
+            top: 18px;
+            right: 15px;
+            padding: 6px 12px;
+            font-size: 14px;
+            color: rgba(219, 20, 103, 0.915);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0);
+            border-radius: 12px;
+        }
+
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 42px;
+            font-weight: 900;
+            font-style: italic;
+            color: #faf9f9e4;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .logo span {
+            font-size: 20px;
+            font-weight: bold;
+            font-style: normal;
+            vertical-align: bottom;
+            margin-top: 12px;
+            color: #faf9f9e4;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #d3d1d1;
+            margin-top: 6px;
+            opacity: 0.9;
+            max-width: 500px;
+        }
+
+        .warn {
+            padding: 6px 12px;
+            font-size: 13px;
+            color: #de1212;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.486);
+            border-radius: 12px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 720px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-card {
+            background: rgba(22, 22, 22, 0.665);
+            border-radius: 20px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(222, 20, 104, 0.2);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .input-card input {
+            flex-grow: 1;
+            min-width: 0;
+            border: none; 
+            outline: none;
+            font-size: 15px;
+            background: transparent;
+            color: rgb(255, 206, 236);
+            padding: 6px 4px;
+        }
+
+        .input-card input::placeholder {
+            color: rgba(255, 206, 236, 0.5);
+        }
+
+        .my-ip-btn {
+            background: rgba(222, 20, 104, 0.25);
+            border: 1px solid #de1468;
+            color: #ff9ecf;
+            border-radius: 12px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .my-ip-btn:hover {
+            background: #de1468;
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            background-color: #e0007a;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .send-btn:hover {
+            background-color: #c00068;
+            transform: scale(1.05);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .status-msg {
+            display: none;
+            background: rgba(22, 22, 22, 0.832);
+            padding: 12px 18px;
+            border-radius: 14px;
+            color: #ff80a6;
+            font-size: 14px;
+            text-align: center;
+            border-left: 4px solid #de1468;
+        }
+
+        .results-container {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-card {
+            background: rgba(22, 22, 22, 0.832);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-top: 2px solid rgba(222, 20, 104, 0.5);
+        }
+
+        .info-card .label {
+            font-size: 11px;
+            color: #ff9ecf;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+        }
+
+        .info-card .value {
+            font-size: 15px;
+            color: #ffffff;
+            font-weight: bold;
+            word-break: break-word;
+        }
+
+        .info-card .sub-value {
+            font-size: 12px;
+            color: #d3d1d1;
+        }
+
+        .map-card {
+            background: rgba(22, 22, 22, 0.832);
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .map-title {
+            font-size: 14px;
+            color: #ff9ecf;
+            font-weight: bold;
+        }
+
+        #map {
+            width: 100%;
+            height: 300px;
+            border-radius: 12px;
+            background: #111;
+            z-index: 1;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: #e0007a;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .action-btn:hover {
+            background: #c00068;
+            transform: scale(1.03);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .clear-btn {
+            background: rgba(22, 22, 22, 0.72);
+            border: 1px solid rgba(255, 158, 207, 0.45);
+            color: #ffffff;
+        }
+
+        .clear-btn:hover {
+            background: #4a2637;
+            border-color: #ff9ecf;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            background: rgba(22, 22, 22, 0.95);
+            color: #ff85c2;
+            border: 1px solid #de1468;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .logo { font-size: 34px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .action-btn { padding: 8px 12px; font-size: 12px; }
+            .input-card { padding: 8px 10px; gap: 6px; }
+            .my-ip-btn { padding: 6px 8px; font-size: 11px; }
+            .send-btn { width: 36px; height: 36px; min-width: 36px; }
+            .send-btn svg { width: 16px; height: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ip_version">0.0.5</div>
+
+    <div class="header-container">
+        <div class="logo">
+            ARROW<span>IP</span>
+        </div>
+        <div class="subtitle">
+            Вычисление всей возможной информации по IPv4 и IPv6.
+        </div>
+        <div class="warn">
+            Не используйте слишком часто!
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <div class="input-card">
+            <input 
+                type="text" 
+                id="ipInput" 
+                placeholder="Введите IP адрес" 
+                autocomplete="off"
+            />
+            <button class="my-ip-btn" id="myIpBtn">Мой IP</button>
+            <button class="send-btn" id="searchBtn" title="Найти">
+                <svg viewBox="0 0 24 24">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <div class="status-msg" id="statusMsg"></div>
+
+        <div class="results-container" id="resultsContainer">
+            
+            <div class="actions-row">
+                <button class="action-btn clear-btn" id="clearBtn" type="button">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span>Очистить результат</span>
+                </button>
+
+                <button class="action-btn" id="copyBtn">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Копировать результат</span>
+                </button>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <span class="label">IP Адрес</span>
+                    <span class="value" id="resIp">-</span>
+                    <span class="sub-value" id="resType">IPv4</span>
+                </div>
+                
+                <div class="info-card">
+                    <span class="label">Страна</span>
+                    <span class="value" id="resCountry">-</span>
+                    <span class="sub-value" id="resCountryCode">-</span>
+                </div>
+
+                <div class="info-card">
+                    <span class="label">Город / Регион</span>
+                    <span class="value" id="resCity">-</span>
+                    <span class="sub-value" id="resRegion">-</span>
+                </div>
+
+                <div class="info-card">
+                    <span class="label">Провайдер</span>
+                    <span class="value" id="resIsp">-</span>
+                    <span class="sub-value" id="resOrg">-</span>
+                </div>
+
+                <div class="info-card">
+                    <span class="label">Часовой пояс</span>
+                    <span class="value" id="resTimezone">-</span>
+                    <span class="sub-value" id="resUtc">-</span>
+                </div>
+
+                <div class="info-card">
+                    <span class="label">Координаты</span>
+                    <span class="value" id="resCoords">-</span>
+                    <span class="sub-value" id="resPostal">Почтовый индекс:</span>
+                </div>
+            </div>
+
+            <div class="map-card">
+                <div class="map-header">
+                    <span class="map-title">Карта местоположения</span>
+                </div>
+                <div id="map"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="toast" id="toast">Скопировано в буфер обмена</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const ipInput = document.getElementById("ipInput");
+        const searchBtn = document.getElementById("searchBtn");
+        const myIpBtn = document.getElementById("myIpBtn");
+        const copyBtn = document.getElementById("copyBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const statusMsg = document.getElementById("statusMsg");
+        const resultsContainer = document.getElementById("resultsContainer");
+        const toast = document.getElementById("toast");
+
+        let map = null;
+        let marker = null;
+        let currentIpData = null;
+
+        clearBtn.addEventListener("click", () => {  
+            currentIpData = null;
+            ipInput.value = "";
+            resultsContainer.style.display = "none";
+            statusMsg.style.display = "none";
+
+            if (map) {
+                map.remove();
+                map = null;
+                marker = null;
+            }
+
+            ipInput.focus();
+        });
+
+        ipInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                fetchIpDetails(ipInput.value.trim());
+            }
+        });
+
+        searchBtn.addEventListener("click", () => {
+            fetchIpDetails(ipInput.value.trim());
+        });
+
+        myIpBtn.addEventListener("click", () => {
+            fetchIpDetails("", true);
+        });
+
+        function isValidIP(ip) {
+            if (!ip) return true;
+            const ipv4Pattern = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$/;
+            const ipv6Pattern = /^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,7}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,6})$/;
+            return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
+        }
+
+        function showToast(text) {
+            toast.textContent = text;
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 2500);
+        }
+
+        async function fetchIpDetails(targetIp, isOwnIpRequest = false) {
+            if (targetIp && !isValidIP(targetIp)) {
+                showError("Пожалуйста, введите корректный IPv4 или IPv6 адрес");
+                return;
+            }
+
+            showStatus("Подождите...");
+            resultsContainer.style.display = "none";
+
+            try {
+                const url = targetIp 
+                    ? `https://ipapi.co/${encodeURIComponent(targetIp)}/json/` 
+                    : `https://ipapi.co/json/`;
+
+                let response = await fetch(url);
+                let data = await response.json();
+
+                if (data.error) {
+                    const fallbackUrl = targetIp 
+                        ? `https://ip-api.com/json/${encodeURIComponent(targetIp)}`
+                        : `https://ip-api.com/json/`;
+
+                    const fbResp = await fetch(fallbackUrl);
+                    const fbData = await fbResp.json();
+
+                    if (fbData.status === "fail") {
+                        throw new Error(fbData.message || "Не удалось найти сведения по этому IP.");
+                    }
+
+                    data = {
+                        ip: fbData.query,
+                        version: fbData.query.includes(":") ? "IPv6" : "IPv4",
+                        country_name: fbData.country,
+                        country_code: fbData.countryCode,
+                        region: fbData.regionName,
+                        city: fbData.city,
+                        postal: fbData.zip || "-",
+                        org: fbData.org || fbData.as || "-",
+                        org_isp: fbData.isp || "-",
+                        timezone: fbData.timezone || "-",
+                        utc_offset: "-",
+                        latitude: fbData.lat,
+                        longitude: fbData.lon
+                    };
+                }
+
+                currentIpData = data;
+
+                if (isOwnIpRequest && data.ip) {
+                    ipInput.value = data.ip;
+                }
+
+                displayResults(data);
+                statusMsg.style.display = "none";
+
+            } catch (err) {
+                console.error(err);
+                showError("Ошибка, попробуйте снова позже");
+            }
+        }
+
+        function showStatus(text) {
+            statusMsg.textContent = text;
+            statusMsg.style.display = "block";
+            statusMsg.style.borderColor = "#de1468";
+        }
+
+        function showError(text) {
+            statusMsg.textContent = text;
+            statusMsg.style.display = "block";
+            statusMsg.style.borderColor = "#ff3366";
+        }
+
+        function getCountryFlag(countryCode) {
+            if (!countryCode || countryCode.length !== 2) return "🌐";
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 127397 + char.charCodeAt());
+            return String.fromCodePoint(...codePoints);
+        }
+
+        function displayResults(data) {
+            const ip = data.ip || "-";
+            const isIpv6 = ip.includes(":");
+            
+            document.getElementById("resIp").textContent = ip;
+            document.getElementById("resType").textContent = data.version || (isIpv6 ? "IPv6" : "IPv4");
+
+            const flag = getCountryFlag(data.country_code);
+            document.getElementById("resCountry").textContent = `${flag} ${data.country_name || data.country || "-"}`;
+            document.getElementById("resCountryCode").textContent = `Код: ${data.country_code || "-"}`;
+
+            document.getElementById("resCity").textContent = data.city || "-";
+            document.getElementById("resRegion").textContent = data.region || data.region_code || "-";
+
+            document.getElementById("resIsp").textContent = data.org || data.isp || "-";
+            document.getElementById("resOrg").textContent = data.asn ? `${data.asn}` : (data.org_isp || "-");
+
+            document.getElementById("resTimezone").textContent = data.timezone || "-";
+            document.getElementById("resUtc").textContent = data.utc_offset ? `UTC ${data.utc_offset}` : "-";
+
+            const lat = data.latitude;
+            const lon = data.longitude;
+
+            if (lat && lon) {
+                document.getElementById("resCoords").textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+            } else {
+                document.getElementById("resCoords").textContent = "-";
+            }
+            document.getElementById("resPostal").textContent = `Почтовый индекс: ${data.postal || "-"}`;
+
+            resultsContainer.style.display = "flex";
+
+            if (lat && lon) {
+                renderMap(lat, lon, `${data.city || ""}, ${data.country_name || ""}`);
+            }
+        }
+
+        function renderMap(lat, lon, label) {
+            setTimeout(() => {
+                if (!map) {
+                    map = L.map('map').setView([lat, lon], 10);
+
+                    L.tileLayer(
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
+                            maxZoom: 19
+                        }
+                    ).addTo(map);
+
+                    marker = L.marker([lat, lon]).addTo(map);
+                } else {
+                    map.setView([lat, lon], 10);
+                    marker.setLatLng([lat, lon]);
+                }
+
+                marker.bindPopup(`<b>${label}</b><br>Lat: ${lat}, Lon: ${lon}`).openPopup();
+                map.invalidateSize();
+            }, 150);
+        }
+
+        copyBtn.addEventListener("click", () => {
+            if (!currentIpData) return;
+
+            const textToCopy = `
+IP Адрес: ${currentIpData.ip || '-'} (${currentIpData.version || '-'})
+Страна: ${currentIpData.country_name || '-'} (${currentIpData.country_code || '-'})
+Город/Регион: ${currentIpData.city || '-'}, ${currentIpData.region || '-'}
+Провайдер: ${currentIpData.org || currentIpData.isp || '-'}
+Часовой пояс: ${currentIpData.timezone || '-'} (UTC ${currentIpData.utc_offset || '-'})
+Координаты: ${currentIpData.latitude || '-'}, ${currentIpData.longitude || '-'}
+Почтовый индекс: ${currentIpData.postal || 'Нет'}`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast("Скопировано");
+                }).catch(() => {
+                    fallbackCopy(textToCopy);
+                });
+            } else {
+                fallbackCopy(textToCopy);
+            }
+        });
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Скопировано");
+            } catch (err) {
+                showToast("Ошибка");
+            }
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+</html>
